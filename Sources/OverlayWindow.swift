@@ -1,5 +1,4 @@
 import Cocoa
-import SwiftUI
 import Combine
 import MetalKit
 
@@ -81,21 +80,19 @@ class EDRMetalView: MTKView, MTKViewDelegate {
     private var commandQueue: MTLCommandQueue?
     private var currentComponent: Double = 0.0
     private var currentAlpha: Double = 1.0
-    private var renderPipelineState: MTLRenderPipelineState?
     private var enforcementTimer: Timer?
     
     override init(frame frameRect: NSRect, device: MTLDevice?) {
         let defaultDevice = device ?? MTLCreateSystemDefaultDevice()
         super.init(frame: frameRect, device: defaultDevice)
         setupMetal()
-        setupEnforcementTimer()
+        // Timer starts lazily via setBrightness() when effect is enabled
     }
     
     required init(coder: NSCoder) {
         super.init(coder: coder)
         self.device = MTLCreateSystemDefaultDevice()
         setupMetal()
-        setupEnforcementTimer()
     }
     
     deinit {
@@ -125,44 +122,54 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         metalLayer.compositingFilter = "multiplyBlendMode"
     }
     
-    private func setupEnforcementTimer() {
+    private func startEnforcementTimer() {
+        guard enforcementTimer == nil else { return }
         // Create a 60Hz timer to continuously enforce the layer properties.
         // When the window loses focus, macOS WindowServer tries to strip the 
         // compositingFilter. By continuously re-assigning it, we fight back.
-        enforcementTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.enforceBlendMode()
         }
-        RunLoop.main.add(enforcementTimer!, forMode: .common)
+        RunLoop.main.add(timer, forMode: .common)
+        enforcementTimer = timer
+    }
+    
+    private func stopEnforcementTimer() {
+        enforcementTimer?.invalidate()
+        enforcementTimer = nil
     }
     
     private func enforceBlendMode() {
-        // Force the layer to maintain its compositing filter against macOS background stripping
-        if currentComponent > 0.0 {
-            if self.layer?.compositingFilter as? String != "multiplyBlendMode" {
-                self.layer?.compositingFilter = "multiplyBlendMode"
-            }
+        // Only re-apply if macOS actually stripped it — avoids unnecessary GPU work
+        if self.layer?.compositingFilter as? String != "multiplyBlendMode" {
+            self.layer?.compositingFilter = "multiplyBlendMode"
             self.needsDisplay = true
         }
+    }
+    
+    /// Call before closing the parent window to ensure clean teardown
+    func cleanup() {
+        stopEnforcementTimer()
     }
     
     func setBrightness(_ value: Double, alphaVal: Double) {
         if value <= 1.01 {
             self.currentComponent = 0.0
             self.currentAlpha = 0.0
-            self.layer?.compositingFilter = nil 
+            self.layer?.compositingFilter = nil
             self.isPaused = true
+            stopEnforcementTimer() // Save battery when disabled
         } else {
             self.currentComponent = value
             // With multiplyBlendMode, alpha dictates the strength of the multiplication.
-            // 1.0 means full multiplication effect. 
-            self.currentAlpha = alphaVal 
+            // 1.0 means full multiplication effect.
+            self.currentAlpha = alphaVal
             self.layer?.compositingFilter = "multiplyBlendMode"
             self.isPaused = false
+            startEnforcementTimer() // Re-arm enforcement when active
         }
         
-        DispatchQueue.main.async {
-            self.needsDisplay = true
-        }
+        self.needsDisplay = true
     }
     
     // MARK: - MTKViewDelegate

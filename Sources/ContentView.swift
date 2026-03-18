@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var manager = BrightnessManager.shared
+    @ObservedObject private var manager = BrightnessManager.shared
     @State private var showAdvanced = false
     
     var body: some View {

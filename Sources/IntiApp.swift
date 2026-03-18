@@ -1,19 +1,37 @@
 import SwiftUI
 
-import SwiftUI
-
 class AppDelegate: NSObject, NSApplicationDelegate {
     var overlayWindows: [OverlayWindow] = []
+    private var screenObserver: NSObjectProtocol?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupOverlays()
-        NotificationCenter.default.addObserver(self, selector: #selector(setupOverlays), name: NSApplication.didChangeScreenParametersNotification, object: nil)
+        screenObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.setupOverlays()
+        }
+    }
+    
+    func applicationWillTerminate(_ notification: Notification) {
+        // Clean up observer and overlay resources
+        if let observer = screenObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        for window in overlayWindows {
+            (window.contentView as? EDRMetalView)?.cleanup()
+            window.close()
+        }
+        overlayWindows.removeAll()
     }
 
-    @objc func setupOverlays() {
-        // Clear existing overlays
+    private func setupOverlays() {
+        // Clean up existing overlays
         for window in overlayWindows {
+            (window.contentView as? EDRMetalView)?.cleanup()
             window.close()
         }
         overlayWindows.removeAll()
@@ -22,8 +40,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let mainScreen = NSScreen.main else { return }
         
         let overlay = OverlayWindow(screen: mainScreen)
-        // Order front without making it key to avoid focus changes
-        overlay.orderFront(nil)
         overlay.orderFrontRegardless()
         overlayWindows.append(overlay)
     }
