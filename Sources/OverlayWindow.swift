@@ -7,14 +7,21 @@ class OverlayWindow: NSWindow {
     private var cancellables = Set<AnyCancellable>()
     
     init(screen: NSScreen) {
-        let contentRect = screen.frame
+        var contentRect = screen.frame
+        // HACK: Defeat macOS "Direct Display" / Hardware Overlay promotion.
+        // If the window is perfectly full-screen, macOS promotes it. When the app loses
+        // focus, WindowServer strips the compositingFilter, resulting in a solid white screen.
+        // Making the window 1 point larger bypasses this buggy optimization.
+        contentRect.size.width += 1.0
+        contentRect.size.height += 1.0
+        
         super.init(contentRect: contentRect,
                    styleMask: [.borderless, .fullSizeContentView],
                    backing: .buffered,
                    defer: false)
         
         self.level = .screenSaver
-        self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+        self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = false
@@ -73,17 +80,25 @@ class EDRMetalView: MTKView, MTKViewDelegate {
     private var commandQueue: MTLCommandQueue?
     private var currentComponent: Double = 0.0
     private var currentAlpha: Double = 1.0
+    private var renderPipelineState: MTLRenderPipelineState?
+    private var enforcementTimer: Timer?
     
     override init(frame frameRect: NSRect, device: MTLDevice?) {
         let defaultDevice = device ?? MTLCreateSystemDefaultDevice()
         super.init(frame: frameRect, device: defaultDevice)
         setupMetal()
+        setupEnforcementTimer()
     }
     
     required init(coder: NSCoder) {
         super.init(coder: coder)
         self.device = MTLCreateSystemDefaultDevice()
         setupMetal()
+        setupEnforcementTimer()
+    }
+    
+    deinit {
+        enforcementTimer?.invalidate()
     }
     
     private func setupMetal() {
@@ -97,7 +112,7 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         self.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearSRGB)
         self.clearColor = MTLClearColorMake(0, 0, 0, 0)
         
-        // Performance: only draw when we say so
+        // Performance: draw only when we need to 
         self.enableSetNeedsDisplay = true
         self.isPaused = true
         
@@ -109,18 +124,41 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         metalLayer.compositingFilter = "multiplyBlendMode"
     }
     
+    private func setupEnforcementTimer() {
+        // Create a 60Hz timer to continuously enforce the layer properties.
+        // When the window loses focus, macOS WindowServer tries to strip the 
+        // compositingFilter. By continuously re-assigning it, we fight back.
+        enforcementTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.enforceBlendMode()
+        }
+        RunLoop.main.add(enforcementTimer!, forMode: .common)
+    }
+    
+    private func enforceBlendMode() {
+        // Force the layer to maintain its compositing filter against macOS background stripping
+        if currentComponent > 0.0 {
+            if self.layer?.compositingFilter as? String != "multiplyBlendMode" {
+                self.layer?.compositingFilter = "multiplyBlendMode"
+            }
+            self.needsDisplay = true
+        }
+    }
+    
     func setBrightness(_ value: Double, alphaVal: Double) {
         if value <= 1.01 {
             self.currentComponent = 0.0
             self.currentAlpha = 0.0
-            self.layer?.compositingFilter = nil // Remove filter when disabled to save power
+            self.layer?.compositingFilter = nil 
+            self.isPaused = true
         } else {
             self.currentComponent = value
-            self.currentAlpha = alphaVal
+            // With multiplyBlendMode, alpha dictates the strength of the multiplication.
+            // 1.0 means full multiplication effect. 
+            self.currentAlpha = alphaVal 
             self.layer?.compositingFilter = "multiplyBlendMode"
+            self.isPaused = false
         }
         
-        // Trigger a redraw
         DispatchQueue.main.async {
             self.needsDisplay = true
         }
@@ -129,7 +167,6 @@ class EDRMetalView: MTKView, MTKViewDelegate {
     // MARK: - MTKViewDelegate
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-        // Handle resize if necessary, usually handled by MTKView itself
     }
     
     func draw(in view: MTKView) {
@@ -140,11 +177,12 @@ class EDRMetalView: MTKView, MTKViewDelegate {
             return
         }
         
-        if currentComponent == 0.0 {
-            // If disabled, just clear to transparent
+        if currentComponent <= 0.0 {
+            // Disabled
             renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 0.0)
         } else {
-            // For multiplyBlendMode, we just fill the screen with the multiplier color.
+            // Multiplication overlay. We fill the screen with the multiplier value.
+            // If pixel is 0.5 and we clear with 2.0, result is 1.0.
             let c = currentComponent
             let a = currentAlpha
             renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(c, c, c, a)
