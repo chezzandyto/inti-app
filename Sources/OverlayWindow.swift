@@ -26,6 +26,7 @@ class OverlayWindow: NSWindow {
         self.isOpaque = false
         self.hasShadow = false
         self.ignoresMouseEvents = true
+        self.isReleasedWhenClosed = false // Fix EXC_BAD_ACCESS on display disconnect
         
         // Create the EDR view
         let edrView = EDRMetalView(frame: contentRect)
