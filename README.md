@@ -21,6 +21,9 @@ Inti creates a full-screen, completely transparent, click-through `NSWindow` ove
 
 The Metal layer creates a `multiplyBlendMode` effect. When combined with values far beyond standard white (`> 1.0` in the `.extendedLinearSRGB` color space), it physically forces the monitor hardware to increase the LED backlight intensity, identical to how HDR videos are rendered system-wide.
 
+## Known Limitations
+- **Cursor appearance**: The macOS cursor may appear slightly darker (grey edges instead of white) while the HDR boost is active. This is an inherent limitation of the `multiplyBlendMode` compositing technique — it can only brighten content below the overlay, but the hardware cursor is rendered by the system at SDR levels and cannot be affected by any window-level compositing filter.
+
 ## Disclaimer
 Running your display at maximum HDR brightness for extended periods will significantly reduce battery life and may accelerate hardware degradation (such as Mini-LED wear or typical OLED burn-in if applicable). Use responsibly.
 
