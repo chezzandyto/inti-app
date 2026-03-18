@@ -9,12 +9,32 @@ Inti is a macOS native utility that unlocks the full brightness potential of you
 - **Safe Multi-Monitor Support**: Automatically handles display reconnections and only applies the overdrive to the main HDR-capable screen.
 - **Settings Persistence**: Remembers your preferred intensity and calibration state between launches.
 
-## Installation
-Currently, Inti must be built from source using Xcode.
+## Requirements
+- macOS 13.0 (Ventura) or later
+- An XDR-capable display (e.g., MacBook Pro 14"/16" with Liquid Retina XDR, or Pro Display XDR)
+- Xcode 14+ or Swift 5.9+ command line tools
 
+## Installation
+
+### Option A: Build the `.app` bundle (recommended)
+```bash
+git clone https://github.com/chezzandyto/inti-app.git
+cd inti-app
+chmod +x scripts/build-app.sh
+./scripts/build-app.sh
+```
+The compiled `Inti.app` will be at `build/Inti.app`. Drag it to your `/Applications` folder or run it directly with `open build/Inti.app`.
+
+### Option B: Run from Xcode
 1. Clone this repository.
 2. Open `Package.swift` in Xcode 14 or newer.
 3. Select the `Inti` scheme and run (`Cmd + R`).
+
+### Option C: Run from terminal
+```bash
+swift build -c release
+.build/release/Inti
+```
 
 ## How it Works
 Inti creates a full-screen, completely transparent, click-through `NSWindow` overlay. Instead of relying on fragile Core Animation compositing filters that macOS disables to save power, Inti uses an `MTKView` (Metal Kit) combined with a high-frequency `Timer`.
