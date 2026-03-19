@@ -1,6 +1,6 @@
-# Inti
+# Inti™
 
-Inti is a macOS native utility that unlocks the full brightness potential of your Apple Silicon MacBook Pro's Liquid Retina XDR display or external HDR monitor. By bypassing macOS's software brightness limits, Inti pushes your screen's backlight into its Extended Dynamic Range (EDR) hardware headroom securely and stably.
+Inti™ is a macOS native utility that unlocks the full brightness potential of your Apple Silicon MacBook Pro's Liquid Retina XDR display or external HDR monitor. By bypassing macOS's software brightness limits, Inti pushes your screen's backlight into its Extended Dynamic Range (EDR) hardware headroom securely and stably.
 
 ## Features
 - **True HDR Brightness**: Utilizes pure Native Metal compositing to maintain the EDR multiplier effect without washing out screen colors.
@@ -48,4 +48,5 @@ The Metal layer creates a `multiplyBlendMode` effect. When combined with values 
 Running your display at maximum HDR brightness for extended periods will significantly reduce battery life and may accelerate hardware degradation (such as Mini-LED wear or typical OLED burn-in if applicable). Use responsibly.
 
 ## License
-MIT License
+- **Code**: [MIT License](LICENSE)
+- **App icon and artwork**: © 2026 Andres Toapanta. All rights reserved. The app icon and visual assets in the `Resources/` directory may not be used, modified, or redistributed without explicit permission.
