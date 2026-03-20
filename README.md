@@ -1,5 +1,9 @@
 # Inti™
 
+<p align="center">
+  <img src="Resources/promo.png" alt="Inti - See your screen clearly in bright sunlight" width="600">
+</p>
+
 Inti™ is a macOS native utility that unlocks the full brightness potential of your Apple Silicon MacBook Pro's Liquid Retina XDR display or external HDR monitor. By bypassing macOS's software brightness limits, Inti pushes your screen's backlight into its Extended Dynamic Range (EDR) hardware headroom securely and stably.
 
 ## Features
