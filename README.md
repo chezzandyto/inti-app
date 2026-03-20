@@ -15,30 +15,53 @@ Inti™ is a macOS native utility that unlocks the full brightness potential of 
 
 ## Requirements
 - macOS 13.0 (Ventura) or later
-- An XDR-capable display (e.g., MacBook Pro 14"/16" with Liquid Retina XDR, or Pro Display XDR)
-- Xcode 14+ or Swift 5.9+ command line tools
+- An XDR-capable display (MacBook Pro 14"/16" with Liquid Retina XDR, or Pro Display XDR)
 
 ## Installation
 
-### Option A: Build the `.app` bundle (recommended)
+### Option 1: Download the app (recommended)
+
+1. Go to [**Releases**](https://github.com/chezzandyto/inti-app/releases) and download the latest `Inti-vX.X.X-arm64.zip`.
+2. Unzip the file and drag `Inti.app` to your **Applications** folder.
+3. Double-click `Inti.app` to open it or search it in Spotlight. macOS will show a warning saying the app cannot be verified — click **Done** (or **Cancel**), don't move to trash.
+4. Open **System Settings → Privacy & Security**, scroll down and find the message about Inti. Click **Open Anyway**.
+5. A confirmation dialog will appear — click **Open**.
+6. Inti will start and appear as a ☀️ icon in your **menu bar** (top-right of the screen).
+
+> **Note:** This is a one-time process. After the first launch, macOS will remember your choice and open Inti normally from now on.
+
+---
+
+### Option 2: Build from source
+
+<details>
+<summary>Build the <code>.app</code> bundle</summary>
+
 ```bash
 git clone https://github.com/chezzandyto/inti-app.git
 cd inti-app
 chmod +x scripts/build-app.sh
 ./scripts/build-app.sh
 ```
-The compiled `Inti.app` will be at `build/Inti.app`. Drag it to your `/Applications` folder or run it directly with `open build/Inti.app`.
+The compiled `Inti.app` will be at `build/Inti.app`.
+</details>
 
-### Option B: Run from Xcode
+<details>
+<summary>Run from Xcode</summary>
+
 1. Clone this repository.
 2. Open `Package.swift` in Xcode 14 or newer.
 3. Select the `Inti` scheme and run (`Cmd + R`).
+</details>
 
-### Option C: Run from terminal
+<details>
+<summary>Run from terminal</summary>
+
 ```bash
 swift build -c release
 .build/release/Inti
 ```
+</details>
 
 ## How it Works
 Inti creates a full-screen, completely transparent, click-through `NSWindow` overlay. Instead of relying on fragile Core Animation compositing filters that macOS disables to save power, Inti uses an `MTKView` (Metal Kit) combined with a high-frequency `Timer`.
