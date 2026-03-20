@@ -34,27 +34,26 @@ class OverlayWindow: NSWindow {
         // Subscribe to all relevant changes
         BrightnessManager.shared.$isEnabled
             .combineLatest(BrightnessManager.shared.$brightnessLevel,
-                           BrightnessManager.shared.$alphaValue,
                            BrightnessManager.shared.$intensityMultiplier)
             .debounce(for: .milliseconds(16), scheduler: RunLoop.main) // Limit to ~60fps
-            .sink { [weak self] isEnabled, level, alphaVal, intensityMult in
-                self?.updateBrightness(isEnabled: isEnabled, level: level, alphaVal: alphaVal, intensityMult: intensityMult)
+            .sink { [weak self] isEnabled, level, intensityMult in
+                self?.updateBrightness(isEnabled: isEnabled, level: level, intensityMult: intensityMult)
             }
             .store(in: &cancellables)
     }
     
-    private func updateBrightness(isEnabled: Bool, level: Double, alphaVal: Double, intensityMult: Double) {
+    private func updateBrightness(isEnabled: Bool, level: Double, intensityMult: Double) {
         guard let edrView = self.contentView as? EDRMetalView else { return }
         
         if !isEnabled {
-            edrView.setBrightness(0.0, alphaVal: alphaVal)
+            edrView.setBrightness(0.0)
         } else {
             // Clamp intensity to a safe max to prevent white screen instability
             let safeMult = min(intensityMult, 5.0)
             
             // Map 0.0 - 1.0 to a brightness multiplier.
             let boost = 1.0 + (level * (safeMult - 1.0))
-            edrView.setBrightness(boost, alphaVal: alphaVal)
+            edrView.setBrightness(boost)
         }
     }
     
@@ -152,7 +151,7 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         stopEnforcementTimer()
     }
     
-    func setBrightness(_ value: Double, alphaVal: Double) {
+    func setBrightness(_ value: Double) {
         if value <= 1.01 {
             self.currentComponent = 0.0
             self.currentAlpha = 0.0
@@ -161,9 +160,7 @@ class EDRMetalView: MTKView, MTKViewDelegate {
             stopEnforcementTimer() // Save battery when disabled
         } else {
             self.currentComponent = value
-            // With multiplyBlendMode, alpha dictates the strength of the multiplication.
-            // 1.0 means full multiplication effect.
-            self.currentAlpha = alphaVal
+            self.currentAlpha = 1.0 // Always full opacity for multiplyBlendMode
             self.layer?.compositingFilter = "multiplyBlendMode"
             self.isPaused = false
             startEnforcementTimer() // Re-arm enforcement when active

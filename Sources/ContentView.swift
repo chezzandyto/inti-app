@@ -40,10 +40,6 @@ struct ContentView: View {
             DisclosureGroup("Advanced Calibration", isExpanded: $showAdvanced) {
                 VStack(alignment: .leading, spacing: 12) {
                     VStack(alignment: .leading) {
-                        Text("Alpha: \(manager.alphaValue, specifier: "%.2f")")
-                        Slider(value: $manager.alphaValue, in: 0.0...1.0)
-                    }
-                    VStack(alignment: .leading) {
                         Text("Intensity: \(manager.intensityMultiplier, specifier: "%.1f")x")
                         Slider(value: $manager.intensityMultiplier, in: 1.0...5.0)
                     }

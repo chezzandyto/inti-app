@@ -9,11 +9,7 @@ class BrightnessManager: ObservableObject {
         didSet { UserDefaults.standard.set(brightnessLevel, forKey: "brightnessLevel") }
     }
     
-    // Calibration parameters
-    // For multiplyBlendMode, alpha should be 1.0 (fully active)
-    @Published var alphaValue: Double {
-        didSet { UserDefaults.standard.set(alphaValue, forKey: "alphaValue") }
-    }
+    // Calibration parameter
     @Published var intensityMultiplier: Double {
         didSet { UserDefaults.standard.set(intensityMultiplier, forKey: "intensityMultiplier") }
     }
@@ -23,8 +19,7 @@ class BrightnessManager: ObservableObject {
     
     private init() {
         self.isEnabled = UserDefaults.standard.bool(forKey: "isEnabled")
-        self.brightnessLevel = UserDefaults.standard.object(forKey: "brightnessLevel") as? Double ?? 0.0
-        self.alphaValue = UserDefaults.standard.object(forKey: "alphaValue") as? Double ?? 1.0
-        self.intensityMultiplier = UserDefaults.standard.object(forKey: "intensityMultiplier") as? Double ?? 1.0
+        self.brightnessLevel = UserDefaults.standard.object(forKey: "brightnessLevel") as? Double ?? 0.6
+        self.intensityMultiplier = UserDefaults.standard.object(forKey: "intensityMultiplier") as? Double ?? 3.4
     }
 }
