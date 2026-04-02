@@ -111,9 +111,10 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         self.colorspace = CGColorSpace(name: CGColorSpace.extendedLinearSRGB)
         self.clearColor = MTLClearColorMake(0, 0, 0, 0)
         
-        // Performance: draw only when we need to 
+        // Performance: limit frame rate to save GPU/CPU
         self.enableSetNeedsDisplay = true
         self.isPaused = true
+        self.preferredFramesPerSecond = 15 // Limit to 15fps when unpaused
         
         // Layer configuration
         guard let metalLayer = self.layer as? CAMetalLayer else { return }
@@ -121,13 +122,16 @@ class EDRMetalView: MTKView, MTKViewDelegate {
         metalLayer.isOpaque = false // crucial for overlay
         metalLayer.backgroundColor = NSColor.clear.cgColor
         metalLayer.compositingFilter = "multiplyBlendMode"
+        
+        // Memory: reduce from 3 drawables (default) to 2
+        // We only draw once when values change, so no need for triple-buffering
+        metalLayer.maximumDrawableCount = 2
     }
     
     private func startEnforcementTimer() {
         guard enforcementTimer == nil else { return }
-        // Create a 60Hz timer to continuously enforce the layer properties.
-        // When the window loses focus, macOS WindowServer tries to strip the 
-        // compositingFilter. By continuously re-assigning it, we fight back.
+        // We MUST run this at 60Hz. Changing this to lower frequencies causes a white screen
+        // because macOS extremely aggressively strips the filter from unfocused windows.
         let timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
             self?.enforceBlendMode()
         }
@@ -166,8 +170,8 @@ class EDRMetalView: MTKView, MTKViewDelegate {
             self.currentComponent = value
             self.currentAlpha = 1.0 // Always full opacity for multiplyBlendMode
             self.layer?.compositingFilter = "multiplyBlendMode"
-            self.isPaused = false
-            startEnforcementTimer() // Re-arm enforcement when active
+            self.isPaused = false // Must not be paused or macOS drops the filter
+            startEnforcementTimer()
         }
         
         self.needsDisplay = true
