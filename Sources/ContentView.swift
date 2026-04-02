@@ -51,6 +51,35 @@ struct ContentView: View {
             Text("High brightness consumes more battery.")
                 .font(.caption2)
                 .foregroundColor(.secondary)
+            
+            Divider()
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Keyboard Shortcuts")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                HStack {
+                    Text("⌘ ⇧ B")
+                        .font(.system(.caption, design: .monospaced))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(3)
+                    Text("Toggle on/off")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("⌘ ⇧ ↑↓")
+                        .font(.system(.caption, design: .monospaced))
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .cornerRadius(3)
+                    Text("Adjust")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
         }
         .padding()
         .frame(width: 250)

@@ -7,6 +7,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         setupOverlays()
+        HotkeyManager.shared.register()
         screenObserver = NotificationCenter.default.addObserver(
             forName: NSApplication.didChangeScreenParametersNotification,
             object: nil,
@@ -17,6 +18,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
+        // Clean up hotkeys
+        HotkeyManager.shared.unregister()
         // Clean up observer and overlay resources
         if let observer = screenObserver {
             NotificationCenter.default.removeObserver(observer)
