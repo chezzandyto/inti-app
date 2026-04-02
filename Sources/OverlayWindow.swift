@@ -18,9 +18,11 @@ class OverlayWindow: NSWindow {
                    styleMask: [.borderless, .fullSizeContentView],
                    backing: .buffered,
                    defer: false)
-        
+                   
         self.level = .screenSaver
-        self.collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+        self.collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle, .fullScreenAuxiliary]
+        self.animationBehavior = .none // Prevent fade animations that might reveal the filter dropping
+        self.sharingType = .none // Hides from screen capture
         self.backgroundColor = .clear
         self.isOpaque = false
         self.hasShadow = false
@@ -140,7 +142,9 @@ class EDRMetalView: MTKView, MTKViewDelegate {
     
     private func enforceBlendMode() {
         // Only re-apply if macOS actually stripped it — avoids unnecessary GPU work
-        if self.layer?.compositingFilter as? String != "multiplyBlendMode" {
+        let currentFilter = self.layer?.compositingFilter as? String
+        if currentFilter != "multiplyBlendMode" {
+            print("Filter stripped by OS! Current is: \(String(describing: currentFilter))")
             self.layer?.compositingFilter = "multiplyBlendMode"
             self.needsDisplay = true
         }
